@@ -1,7 +1,7 @@
 # admm_joint_pruning
 
 ## Our paper
-DNN Compression by ADMM-based Joint Pruning
+"DNN Compression by ADMM-based Joint Pruning"
 This paper proposes a systematic DNN compression method where weights and neurons are jointly pruned using ADMM.
 
 ## Usage
