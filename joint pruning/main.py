@@ -128,7 +128,7 @@ def main():
     parser.add_argument('--alpha', type=float, default=5e-4, metavar='L',
                         help='l2 norm weight (default: 5e-4)')
     parser.add_argument('--rho', type=float, default=1.5e-3, metavar='R',
-                        help='cardinality weight (default: 1e-2)') #1e-3
+                        help='cardinality weight (default: 1e-2)')
     parser.add_argument('--l1', default=False, action='store_true',
                         help='prune weights with l1 regularization instead of cardinality')
     parser.add_argument('--l2', default=True, action='store_true',
