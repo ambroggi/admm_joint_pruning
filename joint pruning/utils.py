@@ -138,24 +138,24 @@ def update_Z3(V, U3):
     return new_Z
 
 
-def update_U1(U1, X, Z1):
+def update_U1(U1, X, Z1, args):
     new_U = ()
     for u, x, z in zip(U1, X, Z1):
-        new_u = u + x - z
+        new_u = u + args.rhos*(x - z)
         new_U += (new_u,)
     return new_U
 
-def update_U2(U2, V, Z2):
+def update_U2(U2, V, Z2, args):
     new_U = ()
     for u, v, z in zip(U2, V, Z2):
-        new_u = u + v - z
+        new_u = u + args.rhos*(v - z)
         new_U += (new_u,)
     return new_U
 
-def update_U3(U3, V, Z3):
+def update_U3(U3, V, Z3, args):
     new_U = ()
     for u, v, z in zip(U3, V, Z3):
-        new_u = u + v - z
+        new_u = u + args.rhos*(v - z)
         new_U += (new_u,)
     return new_U
 
