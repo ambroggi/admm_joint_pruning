@@ -4,7 +4,7 @@ I modified optimizer to use name of the parameter for preventing prunned weights
 """
 import math
 from collections import defaultdict
-from torch._six import container_abcs
+from typing import Iterable
 import torch
 from copy import deepcopy
 from itertools import chain
@@ -135,8 +135,8 @@ class NameOptimizer(object):
                 return value
             elif isinstance(value, dict):
                 return {k: cast(param, v) for k, v in value.items()}
-            elif isinstance(value, container_abcs.Iterable):
-                return type(value)(cast(param, v) for v in value)
+            elif isinstance(value, Iterable):
+                return type(value)(cast(param, v, param_groups=param_groups) for v in value)
             else:
                 return value
 
