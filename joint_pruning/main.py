@@ -3,7 +3,7 @@ import argparse
 import torch
 import torch.nn.functional as F
 from optimizer import PruneAdam, SGD
-from model import LeNet, AlexNet, CifarNet, VGG16
+from model import LeNet, AlexNet, CifarNet
 from utils import regularized_nll_loss, admm_loss, \
     initialize_Z_and_U, update_X, update_V, update_Z1, update_Z1_l1, \
     update_Z2, update_Z3, update_U1, update_U2, update_U3, \
@@ -63,8 +63,8 @@ def prune_admm(args, model, device, train_loader, test_loader, optimizer):
             Z3 = update_Z3(V, U3)
             U2 = update_U2(U2, V, Z2, args)
             U3 = update_U3(U3, V, Z3, args)
-        print_convergence(model, X, Z1, V, Z2, Z3)
-        #print_convergence(model, X, Z1)
+        # print_convergence(model, X, Z1, V, Z2, Z3)
+        print_convergence(model, X, Z1)
         test(args, model, device, test_loader)
 
 
