@@ -11,7 +11,7 @@ def regularized_nll_loss(args, model, output, target):
     loss = F.nll_loss(output, target)
     if args.l2:
         for name, param in model.named_parameters():
-            if name.split('.')[-1] in ["weight", "weight_orig"] and (name[:4] == "conv" or name[:2] == "fc"):
+            if name.split('.')[-1] in ["weight", "weight_orig"] and (name.split('.')[-2] == "conv" or name.split('.')[-2] == "fc"):
                 loss += args.alpha * param.norm()
                 index += 1
     return loss
@@ -22,7 +22,7 @@ def admm_loss(args, device, model, Z1, U1, Z2, U2, Z3, U3, output, target):
     v_idx = 0
     loss = F.nll_loss(output, target)
     for name, param in model.named_parameters():
-        if name.split('.')[-1] in ["weight", "weight_orig"] and (name[:4] == "conv" or name[:2] == "fc"):
+        if name.split('.')[-1] in ["weight", "weight_orig"] and (name.split('.')[-2] == "conv" or name.split('.')[-2] == "fc"):
             u = U1[w_idx].to(device)
             z = Z1[w_idx].to(device)
             loss += args.rho / 2 * (param - z + u).norm()
@@ -47,7 +47,7 @@ def initialize_Z_and_U(model):
     U2 = ()
     U3 = ()
     for name, param in model.named_parameters():
-        if name.split('.')[-1] in ["weight", "weight_orig"] and (name[:4] == "conv" or name[:2] == "fc"):
+        if name.split('.')[-1] in ["weight", "weight_orig"] and (name.split('.')[-2] == "conv" or name.split('.')[-2] == "fc"):
             Z1 += (param.detach().cpu().clone(),)
             U1 += (torch.zeros_like(param).cpu(),)
         elif name[:1]=="v":
@@ -61,7 +61,7 @@ def initialize_Z_and_U(model):
 def update_X(model):
     X = ()
     for name, param in model.named_parameters():
-        if name.split('.')[-1] in ["weight", "weight_orig"] and (name[:4] == "conv" or name[:2] == "fc"):
+        if name.split('.')[-1] in ["weight", "weight_orig"] and (name.split('.')[-2] == "conv" or name.split('.')[-2] == "fc"):
             X += (param.detach().cpu().clone(),)
     return X
 
@@ -210,7 +210,7 @@ def apply_prune(model, device, args):
     dict_mask = {}
     idx = 0
     for name, param in model.named_parameters():
-        if name.split('.')[-1] in ["weight", "weight_orig"] and (name[:4] == "conv" or name[:2] == "fc"):
+        if name.split('.')[-1] in ["weight", "weight_orig"] and (name.split('.')[-2] == "conv" or name.split('.')[-2] == "fc"):
             mask = prune_weight(param, device, args.percent[idx])
             param.data.mul_(mask)
             # param.data = torch.Tensor(weight_pruned).to(device)
@@ -224,7 +224,7 @@ def apply_l1_prune(model, device, args):
     print("Apply Pruning based on percentile")
     dict_mask = {}
     for name, param in model.named_parameters():
-        if name.split('.')[-1] in ["weight", "weight_orig"] and (name[:4] == "conv" or name[:2] == "fc"):
+        if name.split('.')[-1] in ["weight", "weight_orig"] and (name.split('.')[-2] == "conv" or name.split('.')[-2] == "fc"):
             mask = prune_l1_weight(param, device, delta)
             param.data.mul_(mask)
             dict_mask[name] = mask
@@ -236,7 +236,7 @@ def print_convergence(model, X, Z1):
     idx = 0
     print("normalized norm of (weight - projection)")
     for name, _ in model.named_parameters():
-        if name.split('.')[-1] in ["weight", "weight_orig"] and (name[:4] == "conv" or name[:2] == "fc"):
+        if name.split('.')[-1] in ["weight", "weight_orig"] and (name.split('.')[-2] == "conv" or name.split('.')[-2] == "fc"):
             x, z = X[idx], Z1[idx]
             print("({}): {:.4f}".format(name, (x-z).norm().item() / x.norm().item()))
             idx += 1
@@ -257,7 +257,7 @@ def print_prune(model):
                  100 * (total_v - prune_v) / total_v))
 
     for name, param in model.named_parameters():
-        if name.split('.')[-1] in ["weight", "weight_orig"] and (name[:4] == "conv" or name[:2] == "fc"):
+        if name.split('.')[-1] in ["weight", "weight_orig"] and (name.split('.')[-2] == "conv" or name.split('.')[-2] == "fc"):
             print("[at weight {}]".format(name))
             print("percentage of pruned: {:.4f}%".format(100 * (abs(param) == 0).sum().item() / param.numel()))
             print("nonzero parameters after pruning: {} / {}\n".format((param != 0).sum().item(), param.numel()))
