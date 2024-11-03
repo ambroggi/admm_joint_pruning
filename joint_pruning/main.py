@@ -137,7 +137,7 @@ def main():
                         help='number of epochs to pretrain (default: 3)')
     parser.add_argument('--num_epochs', type=int, default=3, metavar='N',
                         help='number of epochs to train (default: 10)')
-    parser.add_argument('--num_re_epochs', type=int, default=10, metavar='R',
+    parser.add_argument('--num_re_epochs', type=int, default=3, metavar='R',
                         help='number of epochs to retrain (default: 3)')
     parser.add_argument('--lr', type=float, default=1e-2, metavar='LR',
                         help='learning rate (default: 1e-2)')
@@ -164,18 +164,18 @@ def main():
 
     if args.dataset == "mnist":
         model=LeNet2().to(device)
-        train_loader = torch.utils.data.DataLoader(
+        train_loader = torch.utils.data.DataLoader(torch.utils.data.random_split(
             datasets.MNIST('data', train=True, download=True,
                            transform=transforms.Compose([
                                transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
-                           ])),
+                            #    transforms.Normalize((0.1307,), (0.3081,))
+                           ])), [0.01, 0.99])[0],
             batch_size=args.batch_size, shuffle=True, **kwargs)
 
         test_loader = torch.utils.data.DataLoader(
             datasets.MNIST('data', train=False, transform=transforms.Compose([
                                transforms.ToTensor(),
-                               transforms.Normalize((0.1307,), (0.3081,))
+                            #    transforms.Normalize((0.1307,), (0.3081,))
                            ])),
             batch_size=args.test_batch_size, shuffle=True, **kwargs)
     
@@ -238,6 +238,18 @@ def main():
     test(args, model, device, test_loader)
     optimizer = SGD(model.named_parameters(), lr=args.lr, momentum=args.sgd_momentum, weight_decay=args.sgd_decay)
     retrain(args, model, mask, device, train_loader, test_loader, optimizer)
+
+    test(args, model, device, test_loader)
+    count = 1
+    if isinstance(model, LeNet2):
+        while len(model.pruning_layers) > 0:
+            model.__setattr__(f"v{count}", None)
+            pruning_layer = model.pruning_layers.pop(0)
+            pruning_layer.remove(update_weights=True)
+            count += 1
+            print([(x1, len(x2)) for x1, x2 in model.named_parameters()])
+            test(args, model, device, test_loader)
+
 
 if __name__ == "__main__":
     main()

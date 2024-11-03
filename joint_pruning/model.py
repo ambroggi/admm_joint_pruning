@@ -65,6 +65,16 @@ class LeNet2(nn.Module):
                 self.register_parameter(f"v{count}", self.pruning_layers[-1].para)
                 count += 1
 
+    def remove_addm_v_layers(self, keep):
+        count = 1
+        # test = [x.para.data for x in model.pruning_layers]
+        while len(self.pruning_layers) > 0:
+            self.__setattr__(f"v{count}", None)
+            pruning_layer = self.pruning_layers.pop(0)
+            pruning_layer.remove()
+            count += 1
+
+
 
 class PostMutablePruningLayer():
     def __init__(self, module: torch.nn.Module, register_parameter=True):
@@ -84,6 +94,10 @@ class PostMutablePruningLayer():
         self.remove_hook = module.register_forward_hook(self)
 
     def __call__(self, module: torch.nn.Module, args: list[torch.Tensor], output: torch.Tensor) -> torch.Tensor:
+        # if isinstance(module, torch.nn.Linear):
+        #     return (output - module.bias[None, :]) * self.para[None, :] + module.bias[None, :]
+        # elif isinstance(module, torch.nn.Conv2d):
+        #     return (output - module.bias[None, :, None, None]) * self.para[None, :, None, None] + module.bias[None, :, None, None]
         if isinstance(module, torch.nn.Linear):
             return output * self.para[None, :]
         elif isinstance(module, torch.nn.Conv2d):
@@ -97,6 +111,7 @@ class PostMutablePruningLayer():
         if update_weights:
             w: torch.nn.Parameter = self.module.__getattr__("weight")
             self.module.__getattr__("weight").permute(*torch.arange(w.ndim - 1, -1, -1)).data *= self.para.data
+            self.module.__getattr__("bias").permute(*torch.arange(self.module.__getattr__("bias").ndim - 1, -1, -1)).data *= self.para.data
 
         if self.paramiter:
             self.module.__setattr__(f"v_{self.module._get_name()}", None)
