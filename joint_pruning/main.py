@@ -3,7 +3,7 @@ import argparse
 import torch
 import torch.nn.functional as F
 from optimizer import PruneAdam, SGD
-from model import LeNet, AlexNet, CifarNet
+from model import LeNet, LeNet2, AlexNet, CifarNet
 from utils import regularized_nll_loss, admm_loss, \
     initialize_Z_and_U, update_X, update_V, update_Z1, update_Z1_l1, \
     update_Z2, update_Z3, update_U1, update_U2, update_U3, \
@@ -133,9 +133,9 @@ def main():
                         help='prune weights with l1 regularization instead of cardinality')
     parser.add_argument('--l2', default=True, action='store_true',
                         help='apply l2 regularization')
-    parser.add_argument('--num_pre_epochs', type=int, default=8, metavar='P',
+    parser.add_argument('--num_pre_epochs', type=int, default=3, metavar='P',
                         help='number of epochs to pretrain (default: 3)')
-    parser.add_argument('--num_epochs', type=int, default=10, metavar='N',
+    parser.add_argument('--num_epochs', type=int, default=3, metavar='N',
                         help='number of epochs to train (default: 10)')
     parser.add_argument('--num_re_epochs', type=int, default=10, metavar='R',
                         help='number of epochs to retrain (default: 3)')
@@ -150,7 +150,7 @@ def main():
     parser.add_argument('--seed', type=int, default=1, metavar='S', help='random seed (default: 1)')
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
-    parser.add_argument('--k', type=int, default=[int(1*20*0.4),int(20*50*0.25),int(500*0.1),int(10)], metavar='K', help='filter pruning level')
+    parser.add_argument('--k', type=int, default=[int(1*20*0.4),int(50),int(500*0.1),int(10)], metavar='K', help='filter pruning level')
     
     args = parser.parse_args()
 
@@ -163,7 +163,7 @@ def main():
     kwargs = {'num_workers': 4, 'pin_memory': True} if use_cuda else {}
 
     if args.dataset == "mnist":
-        model=LeNet().to(device)
+        model=LeNet2().to(device)
         train_loader = torch.utils.data.DataLoader(
             datasets.MNIST('data', train=True, download=True,
                            transform=transforms.Compose([
@@ -222,9 +222,12 @@ def main():
         testset = torchvision.datasets.ImageNet('imagenet', split='val', download=None, transform=transform)
         test_loader = torch.utils.data.DataLoader(testset, batch_size=args.test_batch_size, shuffle=False, **kwargs)
 
+    model.add_addm_v_layers() if isinstance(model, LeNet2) else None
 
     optimizer = SGD(model.named_parameters(), lr=args.lr, momentum=args.sgd_momentum, weight_decay=args.sgd_decay)
     train(args, model, device, train_loader, test_loader, optimizer)
+    
+    print(type(model))
     
     prune_admm(args, model, device, train_loader, test_loader, optimizer)
       
